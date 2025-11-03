@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 @MainActor
 class DashboardViewModel: ObservableObject {
@@ -22,7 +22,7 @@ class DashboardViewModel: ObservableObject {
 
             if distance > 0 && energy > 0 && !previous.isPartialCharge {
                 let efficiency = distance / energy
-                let dateString = current.date.formatted(.month.day())
+                let dateString = current.date.formatted(date: .abbreviated, time: .omitted)
                 data.append((x: dateString, y: efficiency))
             }
         }
