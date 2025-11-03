@@ -12,8 +12,6 @@ struct ChargingSession: Identifiable, Codable {
     var chargerType: String
     var location: String
     var paymentMethod: String
-    var receipt: Data?
-    var photos: [Data]?
     var chargingNetwork: String
     var tags: [String]?
 }

@@ -15,6 +15,7 @@ struct AddChargingView: View {
     @State private var location = ""
     @State private var paymentMethod = ""
     @State private var chargingNetwork = ""
+    @State private var tags = ""
 
     @State private var showAlert = false
     @State private var alertMessage = ""
@@ -73,6 +74,10 @@ struct AddChargingView: View {
                     TextField("Location", text: $location)
                     TextField("Payment Method", text: $paymentMethod)
                 }
+
+                Section(header: Text("Tags")) {
+                    TextField("Tags (comma separated)", text: $tags)
+                }
             }
             .navigationTitle("New Charge")
             .navigationBarItems(
@@ -123,7 +128,8 @@ struct AddChargingView: View {
             chargerType: chargerType,
             location: location,
             paymentMethod: paymentMethod,
-            chargingNetwork: chargingNetwork
+            chargingNetwork: chargingNetwork,
+            tags: tags.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         )
         chargeManager.add(session: newSession)
         presentationMode.wrappedValue.dismiss()

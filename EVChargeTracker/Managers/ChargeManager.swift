@@ -1,5 +1,5 @@
-import Combine
 import Foundation
+import Combine
 
 class ChargeManager: ObservableObject {
     @Published var sessions: [ChargingSession] = [] {
@@ -45,7 +45,7 @@ class ChargeManager: ObservableObject {
         for i in 0..<(sortedCharges.count - 1) {
             let distance = sortedCharges[i+1].odometer - sortedCharges[i].odometer
             totalDistance += distance
-            totalEnergy += sortedCharges[i+1].energyAdded
+            totalEnergy += sortedCharges[i].energyAdded
         }
 
         return totalEnergy > 0 ? (totalEnergy / totalDistance) * 100 : 0.0
@@ -57,7 +57,7 @@ class ChargeManager: ObservableObject {
         let fileName = "charging_sessions.csv"
         let path = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
 
-        var csvText = "Date,Odometer,Energy Added (kWh),Total Cost,Charger Type,Location\n"
+        var csvText = "Date,Odometer,Energy Added (kWh),Total Cost,Partial Charge,Missed Charge,City Driving %,Charger Type,Location,Payment Method,Charging Network,Tags\n"
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
@@ -66,7 +66,11 @@ class ChargeManager: ObservableObject {
             let date = dateFormatter.string(from: session.date)
             let location = "\"\(session.location)\""
             let chargerType = "\"\(session.chargerType)\""
-            let newLine = "\(date),\(session.odometer),\(session.energyAdded),\(session.totalCost),\(chargerType),\(location)\n"
+            let paymentMethod = "\"\(session.paymentMethod)\""
+            let chargingNetwork = "\"\(session.chargingNetwork)\""
+            let tags = "\"\(session.tags?.joined(separator: ",") ?? "")\""
+
+            let newLine = "\(date),\(session.odometer),\(session.energyAdded),\(session.totalCost),\(session.isPartialCharge),\(session.isMissedCharge),\(session.cityDrivingPercentage),\(chargerType),\(location),\(paymentMethod),\(chargingNetwork),\(tags)\n"
             csvText.append(newLine)
         }
 
@@ -95,6 +99,3 @@ class ChargeManager: ObservableObject {
         self.sessions = []
     }
 }
-
-// Make ChargingSession Codable for saving to UserDefaults
-extension ChargingSession: Codable {}

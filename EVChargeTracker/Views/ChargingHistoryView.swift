@@ -4,7 +4,7 @@ struct ChargingHistoryView: View {
     @EnvironmentObject var chargeManager: ChargeManager
     @State private var showingAddSheet = false
     @State private var document: CSVDocument?
-    @State private var showingShareSheet = false
+    @State private var showErrorAlert = false
 
     var body: some View {
         NavigationView {
@@ -45,6 +45,9 @@ struct ChargingHistoryView: View {
             .sheet(item: $document) { doc in
                 ShareSheet(activityItems: [doc.fileURL])
             }
+            .alert("Export Failed", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) { }
+            }
         }
     }
 
@@ -59,7 +62,8 @@ struct ChargingHistoryView: View {
         if let csvURL = chargeManager.generateCSV() {
             let doc = CSVDocument(fileURL: csvURL)
             self.document = doc
-            self.showingShareSheet = true
+        } else {
+            showErrorAlert = true
         }
     }
 }
