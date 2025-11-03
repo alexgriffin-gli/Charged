@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct LogHistoryView: View {
+struct ChargingHistoryView: View {
     @EnvironmentObject var chargeManager: ChargeManager
     @State private var showingAddSheet = false
     @State private var document: CSVDocument?
@@ -40,7 +40,7 @@ struct LogHistoryView: View {
                 }
             )
             .sheet(isPresented: $showingAddSheet) {
-                NewChargeView()
+                AddChargingView()
             }
             .sheet(item: $document) { doc in
                 ShareSheet(activityItems: [doc.fileURL])
@@ -56,9 +56,11 @@ struct LogHistoryView: View {
     }
 
     private func exportData() {
-        let csvString = DataExporter.exportToCSV(sessions: chargeManager.sessions)
-        let doc = CSVDocument(text: csvString)
-        self.document = doc
+        if let csvURL = chargeManager.generateCSV() {
+            let doc = CSVDocument(fileURL: csvURL)
+            self.document = doc
+            self.showingShareSheet = true
+        }
     }
 }
 
@@ -78,11 +80,9 @@ struct CSVDocument: FileDocument {
     var text: String
     var fileURL: URL
 
-    init(text: String) {
-        self.text = text
-        let tempDir = FileManager.default.temporaryDirectory
-        self.fileURL = tempDir.appendingPathComponent("charging_sessions.csv")
-        try? text.write(to: fileURL, atomically: true, encoding: .utf8)
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+        self.text = (try? String(contentsOf: fileURL)) ?? ""
     }
 
     init(configuration: ReadConfiguration) throws {
@@ -114,9 +114,9 @@ struct ShareSheet: UIViewControllerRepresentable {
 }
 
 
-struct LogHistoryView_Previews: PreviewProvider {
+struct ChargingHistoryView_Previews: PreviewProvider {
     static var previews: some View {
-        LogHistoryView()
+        ChargingHistoryView()
             .environmentObject(ChargeManager())
     }
 }

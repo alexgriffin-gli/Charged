@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct NewChargeView: View {
+struct AddChargingView: View {
     @EnvironmentObject var chargeManager: ChargeManager
     @Environment(\.presentationMode) var presentationMode
 
@@ -130,9 +130,9 @@ struct NewChargeView: View {
     }
 }
 
-struct NewChargeView_Previews: PreviewProvider {
+struct AddChargingView_Previews: PreviewProvider {
     static var previews: some View {
-        NewChargeView()
+        AddChargingView()
             .environmentObject(ChargeManager())
     }
 }

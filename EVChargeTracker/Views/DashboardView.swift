@@ -52,30 +52,13 @@ struct DashboardView: View {
                     .padding()
                 }
 
-                if let stats = EfficiencyCalculator.calculate(sessions: sessions) {
-                    VStack {
-                        Text("Efficiency")
-                            .font(.headline)
-                        HStack {
-                            VStack {
-                                Text("Average")
-                                Text(String(format: "%.2f mi/kWh", stats.average))
-                            }
-                            .padding()
-                            VStack {
-                                Text("Last")
-                                Text(String(format: "%.2f mi/kWh", stats.last))
-                            }
-                            .padding()
-                            VStack {
-                                Text("Best")
-                                Text(String(format: "%.2f mi/kWh", stats.best))
-                            }
-                            .padding()
-                        }
-                    }
-                    .padding()
+                VStack {
+                    Text("Average Efficiency")
+                        .font(.headline)
+                    Text(String(format: "%.2f kWh/100mi", chargeManager.averageEfficiency))
+                        .font(.title)
                 }
+                .padding()
 
                 EfficiencyGraphView(efficiencyData: viewModel.efficiencyData)
 

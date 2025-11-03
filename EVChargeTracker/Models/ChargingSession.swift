@@ -1,6 +1,6 @@
 import Foundation
 
-struct ChargingSession: Identifiable {
+struct ChargingSession: Identifiable, Codable {
     let id: UUID
     var date: Date
     var odometer: Double
