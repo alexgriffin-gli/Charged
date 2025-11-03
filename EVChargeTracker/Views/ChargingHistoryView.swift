@@ -78,9 +78,10 @@ private let itemFormatter: DateFormatter = {
 // Helper for sharing the CSV file
 import UniformTypeIdentifiers
 
-struct CSVDocument: FileDocument {
+struct CSVDocument: FileDocument, Identifiable {
     static var readableContentTypes: [UTType] { [.commaSeparatedText] }
 
+    let id = UUID()
     var text: String
     var fileURL: URL
 
