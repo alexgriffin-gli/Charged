@@ -1,42 +1,65 @@
 import SwiftUI
-import Charts
 
 struct EfficiencyGraphView: View {
-    let efficiencyData: [(x: String, y: Double)]
+    var data: [(x: String, y: Double)]
 
     var body: some View {
-        Chart {
-            ForEach(efficiencyData, id: \.x) { dataPoint in
-                LineMark(
-                    x: .value("Date", dataPoint.x),
-                    y: .value("mi/kWh", dataPoint.y)
-                )
-                .foregroundStyle(Color.teal)
+        VStack {
+            Text("Efficiency Over Time")
+                .font(.headline)
 
-                PointMark(
-                    x: .value("Date", dataPoint.x),
-                    y: .value("mi/kWh", dataPoint.y)
-                )
-                .foregroundStyle(Color.teal)
+            if data.isEmpty {
+                Text("Not enough data to display graph.")
+            } else {
+                HStack(spacing: 8) {
+                    // Y-axis labels
+                    VStack {
+                        let maxY = data.map(\.y).max() ?? 1
+                        Text(String(format: "%.1f", maxY))
+                        Spacer()
+                        Text(String(format: "%.1f", maxY / 2))
+                        Spacer()
+                        Text("0.0")
+                    }
+                    .font(.caption)
+                    .frame(width: 40)
+
+                    // Graph
+                    GeometryReader { geometry in
+                        let maxX = data.count > 1 ? data.count - 1 : 1
+                        let maxY = data.map(\.y).max() ?? 1
+
+                        ZStack {
+                            // Graph path
+                            Path { path in
+                                for (index, point) in data.enumerated() {
+                                    let xPosition = geometry.size.width * CGFloat(index) / CGFloat(maxX)
+                                    let yPosition = geometry.size.height * (1 - CGFloat(point.y / maxY))
+
+                                    if index == 0 {
+                                        path.move(to: CGPoint(x: xPosition, y: yPosition))
+                                    } else {
+                                        path.addLine(to: CGPoint(x: xPosition, y: yPosition))
+                                    }
+                                }
+                            }
+                            .stroke(Color.teal, lineWidth: 2)
+
+                            // Data points
+                            ForEach(0..<data.count, id: \.self) { index in
+                                let point = data[index]
+                                let xPosition = geometry.size.width * CGFloat(index) / CGFloat(maxX)
+                                let yPosition = geometry.size.height * (1 - CGFloat(point.y / maxY))
+
+                                Circle()
+                                    .fill(Color.teal)
+                                    .frame(width: 8, height: 8)
+                                    .position(x: xPosition, y: yPosition)
+                            }
+                        }
+                    }
+                }
             }
         }
-        .chartYAxis {
-            AxisMarks(position: .trailing)
-        }
-        .chartXAxis(.hidden)
-        .frame(height: 150)
-    }
-}
-
-struct EfficiencyGraphView_Previews: PreviewProvider {
-    static var previews: some View {
-        EfficiencyGraphView(efficiencyData: [
-            (x: "1/1", y: 3.5),
-            (x: "1/8", y: 3.8),
-            (x: "1/15", y: 3.6),
-            (x: "1/22", y: 4.1),
-            (x: "1/29", y: 3.9)
-        ])
-        .padding()
     }
 }

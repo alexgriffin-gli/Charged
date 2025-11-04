@@ -3,204 +3,129 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject var vehicleManager: VehicleManager
     @StateObject private var viewModel = DashboardViewModel()
+    @Binding var selectedVehicleIndex: Int
     @State private var showingAddChargingView = false
-    @State private var showingSettingsView = false
+
+    private let columns: [GridItem] = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
+    ]
 
     var body: some View {
-        if let vehicle = vehicleManager.currentVehicle {
-            NavigationView {
-                ZStack(alignment: .bottomTrailing) {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            // Header
-                            headerView(for: vehicle)
+        NavigationView {
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !vehicleManager.vehicles.isEmpty {
+                            let vehicle = vehicleManager.vehicles[selectedVehicleIndex]
+
+                            // Custom Header
+                            VStack {
+                                if let imageData = vehicle.bannerImageData, let uiImage = UIImage(data: imageData) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(height: 200)
+                                        .clipped()
+                                } else {
+                                    Color.gray.frame(height: 200)
+                                }
+                                Text(vehicle.name)
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                    .padding(.top, -50)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .background(Color.deepForestGreen)
+
+                            // Vehicle Picker
+                            Picker("Select Vehicle", selection: $selectedVehicleIndex) {
+                                ForEach(0..<vehicleManager.vehicles.count, id: \.self) { index in
+                                    Text(vehicleManager.vehicles[index].name).tag(index)
+                                }
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .padding()
 
                             // Section Divider
-                            sectionDivider(for: vehicle)
-
-                            // Main Dashboard
-                            mainDashboard
-                                .padding()
-
-                            // Fuel and Service Summary
-                            summarySection
+                            Text("CHARGING STATS")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                                 .padding(.horizontal)
 
-                            // Fuel Efficiency Chart
-                            efficiencyChart
+                            // Metrics Grid
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                MetricCard(title: "Avg. Efficiency", value: String(format: "%.2f mi/kWh", viewModel.averageEfficiency))
+                                MetricCard(title: "Last Efficiency", value: String(format: "%.2f mi/kWh", viewModel.lastEfficiency))
+                                MetricCard(title: "Best Efficiency", value: String(format: "%.2f mi/kWh", viewModel.bestEfficiency))
+                                MetricCard(title: "Total Miles", value: String(format: "%.0f", viewModel.totalMilesTracked))
+                                MetricCard(title: "Total Cost", value: String(format: "$%.2f", viewModel.totalCost))
+                                MetricCard(title: "Total Energy", value: String(format: "%.1f kWh", viewModel.totalEnergy))
+                            }
+                            .padding()
+
+                            // Section Divider
+                            Text("FUEL & SERVICE SUMMARY")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal)
+
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                                MetricCard(title: "Fuel Logs", value: "\(viewModel.totalChargingSessions)")
+                                MetricCard(title: "Total Fuel Cost", value: String(format: "$%.2f", viewModel.totalCost))
+                                MetricCard(title: "Total kWh Charged", value: String(format: "%.1f", viewModel.totalEnergy))
+                            }
+                            .padding()
+
+                            // Charts
+                            VStack(spacing: 20) {
+                                PieChartView(cityPercentage: viewModel.cityDrivingPercentage, highwayPercentage: viewModel.highwayDrivingPercentage)
+                                    .frame(height: 250)
+                                EfficiencyGraphView(data: viewModel.efficiencyData)
+                                    .frame(height: 250)
+                            }
+                            .padding()
+                        } else {
+                            Text("No vehicles added yet. Please add a vehicle to get started.")
                                 .padding()
                         }
                     }
-                    .background(Color(.systemGroupedBackground))
-                    .edgesIgnoringSafeArea(.top)
-
-                    // Floating Action Button
-                    floatingActionButton
                 }
+                .background(Color(.systemGroupedBackground))
                 .navigationBarHidden(true)
-                .onAppear {
-                    viewModel.update(with: vehicle)
-                }
-                .onChange(of: vehicleManager.currentVehicle?.chargingSessions) { _ in
-                    if let updatedVehicle = vehicleManager.currentVehicle {
-                        viewModel.update(with: updatedVehicle)
-                    }
-                }
-                .sheet(isPresented: $showingAddChargingView) {
-                    if let currentVehicle = vehicleManager.currentVehicle {
-                        AddChargingView(vehicle: currentVehicle)
-                            .environmentObject(vehicleManager)
-                    }
-                }
-                .sheet(isPresented: $showingSettingsView) {
-                    SettingsView()
-                        .environmentObject(vehicleManager)
-                }
+                .onAppear(perform: updateViewModel)
+                .onChange(of: selectedVehicleIndex) { _ in updateViewModel() }
             }
-        } else {
-            Text("No vehicle selected. Please add or select a vehicle in Settings.")
-        }
-    }
+            .navigationBarHidden(true)
 
-    private func headerView(for vehicle: Vehicle) -> some View {
-        ZStack {
-            if let bannerImage = vehicle.bannerImage {
-                bannerImage
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 150)
-                    .clipped()
-            } else {
-                Color.deepForestGreen
-                    .frame(height: 150)
-            }
-
-            HStack {
-                Button(action: {
-                    showingSettingsView = true
-                }) {
-                    Image(systemName: "line.horizontal.3")
-                        .font(.title)
-                        .foregroundColor(.white)
-                }
-                Spacer()
-                Text(vehicle.name)
-                    .font(.headline)
-                    .fontWeight(.medium)
+            // Floating Action Button
+            Button(action: {
+                showingAddChargingView = true
+            }) {
+                Image(systemName: "plus")
+                    .font(.title.weight(.semibold))
+                    .padding()
+                    .background(Color.deepForestGreen)
                     .foregroundColor(.white)
-                Spacer()
-                // Placeholder for potential right-side icon
-                Image(systemName: "line.horizontal.3")
-                    .font(.title)
-                    .foregroundColor(.clear)
+                    .clipShape(Circle())
+                    .shadow(radius: 4, x: 0, y: 4)
             }
-            .padding(.top, 40)
-            .padding(.horizontal)
-        }
-    }
-
-    private func sectionDivider(for vehicle: Vehicle) -> some View {
-        ZStack {
-            Color.charcoalGray
-                .frame(height: 80)
-            Text(vehicle.name)
-                .font(.largeTitle)
-                .fontWeight(.light)
-                .foregroundColor(.white)
-        }
-    }
-
-    private var mainDashboard: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-            VStack(spacing: 20) {
-                MetricCardView(title: "AVG mi/KWH") { Text(String(format: "%.2f", viewModel.averageEfficiency)) }
-                MetricCardView(title: "LAST mi/KWH") { Text(String(format: "%.2f", viewModel.lastEfficiency)) }
-                MetricCardView(title: "BEST mi/KWH") {
-                    Text(String(format: "%.2f", viewModel.bestEfficiency))
-                        .foregroundColor(.teal)
-                }
-            }
-
-            VStack(spacing: 20) {
-                MetricCardView(title: "TOTAL MILES TRACKED") {
-                    Text(String(format: "%.0f", viewModel.totalMilesTracked))
-                        .fontWeight(.bold)
-                }
-                MetricCardView(title: "CITY / HIGHWAY %") {
-                    PieChartView(cityPercentage: viewModel.cityDrivingPercentage, highwayPercentage: viewModel.highwayDrivingPercentage)
-                }
-            }
-        }
-    }
-
-    private var summarySection: some View {
-        HStack(spacing: 15) {
-            SummaryCard(label: "FUEL LOGS", value: "\(viewModel.totalChargingSessions)")
-            SummaryCard(label: "TOTAL FUEL COST", value: String(format: "$%.2f", viewModel.totalCost))
-            SummaryCard(label: "TOTAL KWH CHARGED", value: String(format: "%.1f", viewModel.totalEnergy))
-        }
-    }
-
-    private var efficiencyChart: some View {
-        VStack {
-            Text("Fuel Efficiency")
-                .font(.title2)
-                .foregroundColor(.teal)
-            EfficiencyGraphView(efficiencyData: viewModel.efficiencyData)
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(8)
-        .shadow(radius: 5)
-    }
-
-    private var floatingActionButton: some View {
-        Button(action: {
-            showingAddChargingView = true
-        }) {
-            Image(systemName: "plus")
-                .font(.largeTitle)
-                .foregroundColor(.white)
                 .padding()
-                .background(Color.deepForestGreen)
-                .clipShape(Circle())
-                .shadow(radius: 10)
+                .sheet(isPresented: $showingAddChargingView) {
+                    if !vehicleManager.vehicles.isEmpty {
+                        AddChargingView(vehicle: vehicleManager.vehicles[selectedVehicleIndex])
+                    }
+                }
+            }
+            .navigationBarHidden(true)
         }
-        .padding()
+        .navigationViewStyle(StackNavigationViewStyle())
     }
-}
 
-// A helper view for the summary cards
-struct SummaryCard: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.gray)
-            Text(value)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.darkGray)
+    private func updateViewModel() {
+        if !vehicleManager.vehicles.isEmpty {
+            viewModel.update(with: vehicleManager.vehicles[selectedVehicleIndex])
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color.cardBackgroundColor)
-        .cornerRadius(8)
-        .shadow(radius: 2)
-    }
-}
-
-struct DashboardView_Previews: PreviewProvider {
-    static var previews: some View {
-        let vehicleManager = VehicleManager()
-        let sampleVehicle = Vehicle(id: UUID(), name: "My Tesla", make: "Tesla", model: "Model Y", year: 2023, trim: "Long Range", vin: "12345")
-        vehicleManager.add(vehicle: sampleVehicle)
-        vehicleManager.currentVehicle = sampleVehicle
-
-        return DashboardView()
-            .environmentObject(vehicleManager)
     }
 }

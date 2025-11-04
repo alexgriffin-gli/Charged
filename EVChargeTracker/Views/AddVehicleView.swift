@@ -1,30 +1,27 @@
 import SwiftUI
+
+import SwiftUI
 import PhotosUI
 
 struct AddVehicleView: View {
     @EnvironmentObject var vehicleManager: VehicleManager
+    @State private var name: String = ""
+    @State private var make: String = ""
+    @State private var model: String = ""
+    @State private var year: String = ""
+    @State private var trim: String = ""
+    @State private var vin: String = ""
     @Environment(\.presentationMode) var presentationMode
-
-    @State private var name = ""
-    @State private var make = ""
-    @State private var model = ""
-    @State private var year = ""
-    @State private var trim = ""
-    @State private var vin = ""
-    @State private var bannerImage: PhotosPickerItem? = nil
-    @State private var bannerImageData: Data? = nil
-
-    var isFormValid: Bool {
-        !name.isEmpty && !make.isEmpty && !model.isEmpty && !year.isEmpty
-    }
+    @State private var selectedItem: PhotosPickerItem? = nil
+    @State private var selectedImageData: Data? = nil
 
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Vehicle Details")) {
+                Section(header: Text("Vehicle Information")) {
                     TextField("Name (e.g., My Tesla)", text: $name)
-                    TextField("Make", text: $make)
-                    TextField("Model", text: $model)
+                    TextField("Make (e.g., Tesla)", text: $make)
+                    TextField("Model (e.g., Model 3)", text: $model)
                     TextField("Year", text: $year)
                         .keyboardType(.numberPad)
                     TextField("Trim", text: $trim)
@@ -32,58 +29,38 @@ struct AddVehicleView: View {
                 }
 
                 Section(header: Text("Banner Image")) {
-                    PhotosPicker(selection: $bannerImage, matching: .images) {
-                        if let data = bannerImageData, let uiImage = UIImage(data: data) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 200)
-                        } else {
-                            Label("Select a photo", systemImage: "photo")
+                    PhotosPicker(
+                        selection: $selectedItem,
+                        matching: .images,
+                        photoLibrary: .shared()) {
+                            Text("Select a photo")
                         }
+                        .onChange(of: selectedItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                                    selectedImageData = data
+                                }
+                            }
+                        }
+
+                    if let selectedImageData,
+                       let uiImage = UIImage(data: selectedImageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 200)
+                    }
+                }
+
+                Section {
+                    Button("Save Vehicle") {
+                        let yearInt = Int(year)
+                        vehicleManager.addVehicle(name: name, make: make, model: model, year: yearInt, trim: trim, vin: vin, bannerImageData: selectedImageData)
+                        presentationMode.wrappedValue.dismiss()
                     }
                 }
             }
             .navigationTitle("Add Vehicle")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
-                },
-                trailing: Button("Save") {
-                    saveVehicle()
-                }
-                .disabled(!isFormValid)
-            )
-            .onChange(of: bannerImage) {
-                Task {
-                    if let data = try? await bannerImage?.loadTransferable(type: Data.self) {
-                        bannerImageData = data
-                    }
-                }
-            }
         }
-    }
-
-    private func saveVehicle() {
-        guard let yearInt = Int(year) else { return }
-        let newVehicle = Vehicle(
-            id: UUID(),
-            name: name,
-            make: make,
-            model: model,
-            year: yearInt,
-            trim: trim,
-            vin: vin,
-            bannerImageData: bannerImageData
-        )
-        vehicleManager.add(vehicle: newVehicle)
-        presentationMode.wrappedValue.dismiss()
-    }
-}
-
-struct AddVehicleView_Previews: PreviewProvider {
-    static var previews: some View {
-        AddVehicleView()
-            .environmentObject(VehicleManager())
     }
 }

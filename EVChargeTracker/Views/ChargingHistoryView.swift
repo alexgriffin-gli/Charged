@@ -1,132 +1,36 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct ChargingHistoryView: View {
     @EnvironmentObject var vehicleManager: VehicleManager
-    @State private var showingAddSheet = false
-    @State private var document: CSVDocument?
-    @State private var showErrorAlert = false
+    var vehicle: Vehicle?
 
     var body: some View {
-        if let vehicle = vehicleManager.currentVehicle {
-            NavigationView {
+        NavigationView {
+            if let vehicle = vehicle {
                 List {
                     ForEach(vehicle.chargingSessions) { session in
                         NavigationLink(destination: DetailedSessionView(session: session)) {
                             VStack(alignment: .leading) {
-                                Text("Date: \(session.date, formatter: itemFormatter)")
-                                    .font(.headline)
-                                HStack {
-                                    Text("Energy: \(String(format: "%.2f", session.energyAdded)) kWh")
-                                    Spacer()
-                                    Text("Cost: $\(String(format: "%.2f", session.totalCost))")
-                                }
-                                .font(.subheadline)
+                                Text("Date: \(session.date.formatted(date: .numeric, time: .omitted))")
+                                Text("Odometer: \(String(format: "%.0f", session.odometer))")
+                                Text("Energy Added: \(String(format: "%.2f kWh", session.energyAdded))")
+                                Text("Total Cost: \(String(format: "$%.2f", session.totalCost))")
                             }
-                            .padding(.vertical, 8)
                         }
                     }
-                    .onDelete { offsets in
-                        deleteSession(at: offsets, for: vehicle)
-                    }
+                    .onDelete(perform: deleteSession)
                 }
-                .navigationTitle("Log History")
-                .navigationBarItems(
-                    leading: Button(action: {
-                        exportData(for: vehicle)
-                    }) {
-                        Image(systemName: "square.and.arrow.up")
-                    },
-                    trailing: Button(action: {
-                        showingAddSheet = true
-                    }) {
-                        Image(systemName: "plus")
-                    }
-                )
-                .sheet(isPresented: $showingAddSheet) {
-                    AddChargingView(vehicle: vehicle)
-                        .environmentObject(vehicleManager)
-                }
-                .sheet(item: $document) { doc in
-                    ShareSheet(activityItems: [doc.fileURL])
-                }
-                .alert("Export Failed", isPresented: $showErrorAlert) {
-                    Button("OK", role: .cancel) { }
-                }
+                .navigationTitle("Charging History")
+            } else {
+                Text("Select a vehicle from the Dashboard to see its charging history.")
+                    .navigationTitle("Charging History")
             }
-        } else {
-            Text("No vehicle selected.")
         }
     }
 
-    private func deleteSession(at offsets: IndexSet, for vehicle: Vehicle) {
-        vehicleManager.deleteChargingSession(for: vehicle, at: offsets)
-    }
-
-    private func exportData(for vehicle: Vehicle) {
-        if let csvURL = vehicle.generateCSV() {
-            let doc = CSVDocument(fileURL: csvURL)
-            self.document = doc
-        } else {
-            showErrorAlert = true
+    private func deleteSession(at offsets: IndexSet) {
+        if let vehicle = vehicle {
+            vehicleManager.deleteChargingSession(in: vehicle, at: offsets)
         }
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .long
-    formatter.timeStyle = .short
-    return formatter
-}()
-
-struct CSVDocument: FileDocument, Identifiable {
-    static var readableContentTypes: [UTType] { [.commaSeparatedText] }
-
-    let id = UUID()
-    var text: String
-    var fileURL: URL
-
-    init(fileURL: URL) {
-        self.fileURL = fileURL
-        self.text = (try? String(contentsOf: fileURL)) ?? ""
-    }
-
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents,
-              let string = String(data: data, encoding: .utf8)
-        else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
-        text = string
-        fileURL = configuration.file.filename.flatMap { URL(string: $0) } ?? URL(fileURLWithPath: "")
-    }
-
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        return FileWrapper(regularFileWithContents: text.data(using: .utf8)!)
-    }
-}
-
-struct ShareSheet: UIViewControllerRepresentable {
-    var activityItems: [Any]
-    var applicationActivities: [UIActivity]? = nil
-
-    func makeUIViewController(context: UIViewControllerRepresentableContext<ShareSheet>) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: UIViewControllerRepresentableContext<ShareSheet>) {}
-}
-
-struct ChargingHistoryView_Previews: PreviewProvider {
-    static var previews: some View {
-        let vehicleManager = VehicleManager()
-        let sampleVehicle = Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: "")
-        vehicleManager.add(vehicle: sampleVehicle)
-        vehicleManager.currentVehicle = sampleVehicle
-
-        return ChargingHistoryView()
-            .environmentObject(vehicleManager)
     }
 }

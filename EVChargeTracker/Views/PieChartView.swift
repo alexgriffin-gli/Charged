@@ -1,39 +1,36 @@
 import SwiftUI
 
 struct PieChartView: View {
-    let cityPercentage: Double
-    let highwayPercentage: Double
+    var cityPercentage: Double
+    var highwayPercentage: Double
 
     var body: some View {
-        VStack {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = geometry.size.height
+            let center = CGPoint(x: width / 2, y: height / 2)
+            let radius = min(width, height) / 2
+
             ZStack {
-                Circle()
-                    .trim(from: 0, to: CGFloat(cityPercentage / 100))
-                    .stroke(Color.deepYellowGold, lineWidth: 20)
-                Circle()
-                    .trim(from: CGFloat(cityPercentage / 100), to: 1)
-                    .stroke(Color.deepForestGreen, lineWidth: 20)
-            }
-            .frame(width: 100, height: 100)
-            .rotationEffect(.degrees(-90))
+                Path { path in
+                    path.move(to: center)
+                    path.addArc(center: center, radius: radius, startAngle: .degrees(0), endAngle: .degrees(cityPercentage * 3.6), clockwise: false)
+                }
+                .fill(Color.teal)
 
-            HStack {
-                Circle()
-                    .fill(Color.deepYellowGold)
-                    .frame(width: 10, height: 10)
-                Text("City")
+                Path { path in
+                    path.move(to: center)
+                    path.addArc(center: center, radius: radius, startAngle: .degrees(cityPercentage * 3.6), endAngle: .degrees(360), clockwise: false)
+                }
+                .fill(Color.gold)
 
-                Circle()
-                    .fill(Color.deepForestGreen)
-                    .frame(width: 10, height: 10)
-                Text("Highway")
+                VStack {
+                    Text("Driving Mix")
+                        .font(.headline)
+                    Text(String(format: "City: %.0f%%", cityPercentage))
+                    Text(String(format: "Highway: %.0f%%", highwayPercentage))
+                }
             }
         }
-    }
-}
-
-struct PieChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        PieChartView(cityPercentage: 60, highwayPercentage: 40)
     }
 }

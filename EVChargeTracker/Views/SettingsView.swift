@@ -1,63 +1,38 @@
 import SwiftUI
 
-enum Theme: String, CaseIterable, Identifiable {
-    case system = "System"
-    case light = "Light"
-    case dark = "Dark"
-    var id: String { self.rawValue }
-}
-
 struct SettingsView: View {
     @EnvironmentObject var vehicleManager: VehicleManager
-    @AppStorage("theme") private var selectedTheme: Theme = .system
-    @State private var showingAddVehicleSheet = false
+    @State private var showingShareSheet = false
+    @State private var csvURL: URL?
 
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Appearance")) {
-                    Picker("Theme", selection: $selectedTheme) {
-                        ForEach(Theme.allCases) { theme in
-                            Text(theme.rawValue).tag(theme)
+                Section(header: Text("Data Export")) {
+                    Button("Export to CSV") {
+                        csvURL = vehicleManager.exportToCSV()
+                        if csvURL != nil {
+                            showingShareSheet = true
                         }
-                    }
-                }
-
-                Section(header: Text("Vehicles")) {
-                    Picker("Current Vehicle", selection: $vehicleManager.currentVehicle) {
-                        ForEach(vehicleManager.vehicles) { vehicle in
-                            Text(vehicle.name).tag(vehicle as Vehicle?)
-                        }
-                    }
-
-                    ForEach(vehicleManager.vehicles) { vehicle in
-                        Text(vehicle.name)
-                    }
-                    .onDelete(perform: deleteVehicle)
-
-                    Button("Add Vehicle") {
-                        showingAddVehicleSheet = true
                     }
                 }
             }
             .navigationTitle("Settings")
-            .sheet(isPresented: $showingAddVehicleSheet) {
-                AddVehicleView()
+            .sheet(isPresented: $showingShareSheet) {
+                if let url = csvURL {
+                    ShareSheet(url: url)
+                }
             }
-        }
-    }
-
-    private func deleteVehicle(at offsets: IndexSet) {
-        for index in offsets {
-            let vehicle = vehicleManager.vehicles[index]
-            vehicleManager.delete(vehicle: vehicle)
         }
     }
 }
 
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsView()
-            .environmentObject(VehicleManager())
+struct ShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        return UIActivityViewController(activityItems: [url], applicationActivities: nil)
     }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

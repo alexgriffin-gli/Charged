@@ -1,17 +1,14 @@
 import Foundation
 
-struct ChargingSession: Identifiable, Codable, Equatable, Hashable {
+struct ChargingSession: Identifiable, Codable {
     let id: UUID
     var date: Date
     var odometer: Double
-    var energyAdded: Double // in kWh
+    var energyAdded: Double
     var totalCost: Double
     var isPartialCharge: Bool
     var isMissedCharge: Bool
     var cityDrivingPercentage: Int
-    var chargerType: String
-    var location: String
-    var paymentMethod: String
-    var chargingNetwork: String
-    var tags: [String]?
+    var chargerType: String?
+    var location: String?
 }

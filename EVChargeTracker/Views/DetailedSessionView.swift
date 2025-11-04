@@ -1,60 +1,70 @@
 import SwiftUI
 
 struct DetailedSessionView: View {
-    @EnvironmentObject var vehicleManager: VehicleManager
-    @Environment(\.presentationMode) var presentationMode
-    let session: ChargingSession
+    var session: ChargingSession
 
     var body: some View {
         Form {
             Section(header: Text("Session Details")) {
-                Text("Date: \(session.date, formatter: itemFormatter)")
-                Text("Odometer: \(String(format: "%.1f", session.odometer)) mi")
-                Text("Energy Added: \(String(format: "%.2f", session.energyAdded)) kWh")
-                Text("Total Cost: $\(String(format: "%.2f", session.totalCost))")
+                LabeledContent("Date", value: session.date.formatted(date: .long, time: .omitted))
+                LabeledContent("Odometer", value: String(format: "%.0f miles", session.odometer))
+            }
+
+            Section(header: Text("Charging Stats")) {
+                LabeledContent("Energy Added", value: String(format: "%.2f kWh", session.energyAdded))
+                LabeledContent("Total Cost", value: String(format: "$%.2f", session.totalCost))
+                if let chargerType = session.chargerType, !chargerType.isEmpty {
+                    LabeledContent("Charger Type", value: chargerType)
+                }
+            }
+
+            Section(header: Text("Driving Context")) {
+                LabeledContent("City Driving", value: "\(session.cityDrivingPercentage)%")
+                if let location = session.location, !location.isEmpty {
+                    LabeledContent("Location", value: location)
+                }
             }
 
             Section(header: Text("Flags")) {
-                Text("Partial Charge: \(session.isPartialCharge ? "Yes" : "No")")
-                Text("Missed Charge: \(session.isMissedCharge ? "Yes" : "No")")
-            }
-
-            Section(header: Text("Driving and Charger")) {
-                Text("City Driving: \(session.cityDrivingPercentage)%")
-                Text("Charger Type: \(session.chargerType)")
-                Text("Charging Network: \(session.chargingNetwork)")
-                Text("Location: \(session.location)")
-                Text("Payment Method: \(session.paymentMethod)")
-            }
-
-            Section {
-                Button("Delete", role: .destructive) {
-                    deleteSession()
-                    presentationMode.wrappedValue.dismiss()
+                if session.isPartialCharge {
+                    Label("Partial Charge", systemImage: "flag.fill")
+                }
+                if session.isMissedCharge {
+                    Label("Missed Charge", systemImage: "flag.fill")
+                }
+                if !session.isPartialCharge && !session.isMissedCharge {
+                    Text("No flags for this session.")
                 }
             }
         }
         .navigationTitle("Session Details")
     }
+}
 
-    private func deleteSession() {
-        if let vehicle = vehicleManager.currentVehicle,
-           let sessionIndex = vehicle.chargingSessions.firstIndex(where: { $0.id == session.id }) {
-            vehicleManager.deleteChargingSession(for: vehicle, at: IndexSet(integer: sessionIndex))
+// Helper for iOS versions before 16
+struct LabeledContent<Content: View>: View {
+    var title: LocalizedStringKey
+    var content: Content
+
+    init(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            content
+                .foregroundColor(.secondary)
         }
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .long
-    formatter.timeStyle = .short
-    return formatter
-}()
-
-struct DetailedSessionView_Previews: PreviewProvider {
-    static var previews: some View {
-        DetailedSessionView(session: ChargingSession(id: UUID(), date: Date(), odometer: 70000, energyAdded: 45.0, totalCost: 15.75, isPartialCharge: false, isMissedCharge: false, cityDrivingPercentage: 50, chargerType: "DC Fast", location: "ChargePoint Station", paymentMethod: "Credit Card", chargingNetwork: "ChargePoint", tags: ["Road Trip"]))
-            .environmentObject(VehicleManager())
+extension LabeledContent where Content == Text {
+    init(_ title: LocalizedStringKey, value: String) {
+        self.init(title) {
+            Text(value)
+        }
     }
 }
