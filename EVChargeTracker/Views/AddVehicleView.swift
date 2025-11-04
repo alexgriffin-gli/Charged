@@ -59,9 +59,9 @@ struct AddVehicleView: View {
                     }
                 }
             }
-            .onChange(of: selectedPhoto) { newItem in
+            .onChange(of: selectedPhoto) {
                 Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                    if let data = try? await selectedPhoto?.loadTransferable(type: Data.self) {
                         vehicleImageData = data
                     }
                 }

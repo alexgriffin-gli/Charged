@@ -64,8 +64,8 @@ struct DashboardView: View {
         .onAppear {
             viewModel.update(with: vehicle)
         }
-        .onChange(of: vehicle) { newVehicle in
-            viewModel.update(with: newVehicle)
+        .onChange(of: vehicle) {
+            viewModel.update(with: vehicle)
         }
         .navigationBarItems(trailing:
             Button(action: { showingAddChargingSession = true }) {

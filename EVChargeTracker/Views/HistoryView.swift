@@ -68,9 +68,9 @@ struct HistoryView: View {
                 viewModel.update(with: vehicle)
             }
         }
-        .onChange(of: selectedVehicle) { newVehicle in
-            if let vehicle = newVehicle {
-                viewModel.update(with: newVehicle)
+        .onChange(of: selectedVehicle) {
+            if let vehicle = selectedVehicle {
+                viewModel.update(with: vehicle)
             }
         }
     }
