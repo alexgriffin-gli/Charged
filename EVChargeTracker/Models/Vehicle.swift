@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct Vehicle: Identifiable, Codable, Equatable {
+struct Vehicle: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     var name: String
     var make: String
