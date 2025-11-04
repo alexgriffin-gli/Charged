@@ -54,7 +54,8 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showingAddVehicle) {
-            AddVehicleView(vehicleManager: vehicleManager)
+            AddVehicleView()
+                .environmentObject(vehicleManager)
         }
         .onAppear {
             if selectedVehicle == nil {

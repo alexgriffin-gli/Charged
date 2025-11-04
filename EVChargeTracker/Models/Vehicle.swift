@@ -1,6 +1,6 @@
 import Foundation
 
-struct Vehicle: Identifiable, Codable {
+struct Vehicle: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
     var make: String

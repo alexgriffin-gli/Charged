@@ -2,7 +2,7 @@ internal import SwiftUI
 import PhotosUI
 
 struct AddVehicleView: View {
-    @ObservedObject var vehicleManager: VehicleManager
+    @EnvironmentObject var vehicleManager: VehicleManager
     @Environment(\.presentationMode) var presentationMode
 
     @State private var name: String = ""
