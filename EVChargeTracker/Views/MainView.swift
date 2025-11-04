@@ -4,11 +4,16 @@ struct MainView: View {
     @EnvironmentObject var vehicleManager: VehicleManager
     @State private var showingAddVehicleView = false
     @State private var selectedVehicleIndex = 0
+    @State private var isSideMenuOpen = false
+    @State private var selectedTab: Tab = .dashboard
+
+    enum Tab {
+        case dashboard, history, settings
+    }
 
     var body: some View {
         Group {
             if vehicleManager.vehicles.isEmpty {
-                // Show a placeholder view with a button to add a vehicle
                 VStack {
                     Text("Welcome to EV Charge Tracker")
                         .font(.title)
@@ -25,24 +30,50 @@ struct MainView: View {
                         .environmentObject(vehicleManager)
                 }
             } else {
-                // Main TabView
-                TabView {
-                    DashboardView(selectedVehicleIndex: $selectedVehicleIndex)
-                        .tabItem {
-                            Label("Dashboard", systemImage: "gauge")
+                NavigationView {
+                    ZStack {
+                        VStack {
+                            // Main Content
+                            switch selectedTab {
+                        case .dashboard:
+                            DashboardView(selectedVehicleIndex: $selectedVehicleIndex)
+                        case .history:
+                            ChargingHistoryView(vehicle: vehicleManager.vehicles[selectedVehicleIndex])
+                        case .settings:
+                            SettingsView(selectedVehicleIndex: $selectedVehicleIndex)
                         }
 
-                    ChargingHistoryView(vehicle: vehicleManager.vehicles[selectedVehicleIndex])
-                        .tabItem {
-                            Label("History", systemImage: "list.bullet")
+                        // Custom Tab Bar
+                        HStack {
+                            TabBarButton(title: "Dashboard", systemImage: "gauge", isSelected: selectedTab == .dashboard) {
+                                selectedTab = .dashboard
+                            }
+                            TabBarButton(title: "History", systemImage: "list.bullet", isSelected: selectedTab == .history) {
+                                selectedTab = .history
+                            }
+                            TabBarButton(title: "Settings", systemImage: "gear", isSelected: selectedTab == .settings) {
+                                selectedTab = .settings
+                            }
                         }
+                        .padding()
+                        .background(Color(.systemGray6))
+                    }
+                    .background(Color.white) // Set the background color to white
 
-                    SettingsView()
-                        .tabItem {
-                            Label("Settings", systemImage: "gear")
-                        }
+                    if isSideMenuOpen {
+                        SideMenuView(selectedVehicleIndex: $selectedVehicleIndex, isOpen: $isSideMenuOpen)
+                            .frame(width: 250)
+                            .transition(.move(edge: .leading))
+                    }
                 }
-                .accentColor(.deepForestGreen)
+                .navigationBarItems(leading: Button(action: {
+                    withAnimation {
+                        isSideMenuOpen.toggle()
+                    }
+                }) {
+                    Image(systemName: "line.horizontal.3")
+                })
+                }
             }
         }
         .onAppear {
@@ -50,5 +81,25 @@ struct MainView: View {
                 showingAddVehicleView = true
             }
         }
+    }
+}
+
+struct TabBarButton: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack {
+                Image(systemName: systemImage)
+                    .font(.title2)
+                Text(title)
+                    .font(.caption)
+            }
+            .foregroundColor(isSelected ? .deepForestGreen : .gray)
+        }
+        .frame(maxWidth: .infinity)
     }
 }

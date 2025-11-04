@@ -10,7 +10,7 @@ class VehicleManager: ObservableObject {
         loadVehicles()
     }
 
-    func addVehicle(name: String, make: String, model: String, year: Int?, trim: String?, vin: String?, bannerImageData: Data?) {
+    func addVehicle(name: String, make: String, model: String, year: Int, trim: String, vin: String, bannerImageData: Data?) {
         let newVehicle = Vehicle(id: UUID(), name: name, make: make, model: model, year: year, trim: trim, vin: vin, bannerImageData: bannerImageData, chargingSessions: [])
         vehicles.append(newVehicle)
         saveVehicles()
@@ -49,18 +49,18 @@ class VehicleManager: ObservableObject {
         }
     }
 
-    func exportToCSV() -> URL? {
-        var csvString = "Vehicle,Date,Odometer,Energy Added (kWh),Total Cost,Partial Charge,Missed Charge,City Driving (%)\n"
+    func exportToCSV(for vehicle: Vehicle) -> URL? {
+        var csvString = "Date,Odometer,Energy Added (kWh),Total Cost,Cost/kWh,Partial Charge,Missed Charge,City Driving (%),Charger Type,Location,Custom Location,Payment Method\n"
 
-        for vehicle in vehicles {
-            for session in vehicle.chargingSessions {
-                let dateString = session.date.formatted(date: .numeric, time: .omitted)
-                let partialCharge = session.isPartialCharge ? "Yes" : "No"
-                let missedCharge = session.isMissedCharge ? "Yes" : "No"
+        for session in vehicle.chargingSessions {
+            let dateString = session.date.formatted(date: .numeric, time: .short)
+            let partialCharge = session.isPartialCharge ? "Yes" : "No"
+            let missedCharge = session.isMissedCharge ? "Yes" : "No"
+            let customLocation = session.customLocation ?? ""
+            let paymentMethod = session.paymentMethod ?? ""
 
-                let row = "\(vehicle.name),\(dateString),\(session.odometer),\(session.energyAdded),\(session.totalCost),\(partialCharge),\(missedCharge),\(session.cityDrivingPercentage)\n"
-                csvString.append(row)
-            }
+            let row = "\(dateString),\(session.odometer),\(session.energyAdded),\(session.totalCost),\(session.costPerKwh),\(partialCharge),\(missedCharge),\(session.cityDrivingPercentage),\(session.chargerType.rawValue),\(session.location.rawValue),\(customLocation),\(paymentMethod)\n"
+            csvString.append(row)
         }
 
         let fileManager = FileManager.default
