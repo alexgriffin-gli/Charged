@@ -3,63 +3,67 @@ import UniformTypeIdentifiers
 
 struct ChargingHistoryView: View {
     @EnvironmentObject var vehicleManager: VehicleManager
-    let vehicle: Vehicle
     @State private var showingAddSheet = false
     @State private var document: CSVDocument?
     @State private var showErrorAlert = false
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(vehicle.chargingSessions) { session in
-                    NavigationLink(destination: DetailedSessionView(session: session)) {
-                        VStack(alignment: .leading) {
-                            Text("Date: \(session.date, formatter: itemFormatter)")
-                                .font(.headline)
-                            HStack {
-                                Text("Energy: \(String(format: "%.2f", session.energyAdded)) kWh")
-                                Spacer()
-                                Text("Cost: $\(String(format: "%.2f", session.totalCost))")
+        if let vehicle = vehicleManager.currentVehicle {
+            NavigationView {
+                List {
+                    ForEach(vehicle.chargingSessions) { session in
+                        NavigationLink(destination: DetailedSessionView(session: session)) {
+                            VStack(alignment: .leading) {
+                                Text("Date: \(session.date, formatter: itemFormatter)")
+                                    .font(.headline)
+                                HStack {
+                                    Text("Energy: \(String(format: "%.2f", session.energyAdded)) kWh")
+                                    Spacer()
+                                    Text("Cost: $\(String(format: "%.2f", session.totalCost))")
+                                }
+                                .font(.subheadline)
                             }
-                            .font(.subheadline)
+                            .padding(.vertical, 8)
                         }
-                        .padding(.vertical, 8)
+                    }
+                    .onDelete { offsets in
+                        deleteSession(at: offsets, for: vehicle)
                     }
                 }
-                .onDelete(perform: deleteSession)
-            }
-            .navigationTitle("Log History")
-            .navigationBarItems(
-                leading: Button(action: {
-                    exportData()
-                }) {
-                    Image(systemName: "square.and.arrow.up")
-                },
-                trailing: Button(action: {
-                    showingAddSheet = true
-                }) {
-                    Image(systemName: "plus")
+                .navigationTitle("Log History")
+                .navigationBarItems(
+                    leading: Button(action: {
+                        exportData(for: vehicle)
+                    }) {
+                        Image(systemName: "square.and.arrow.up")
+                    },
+                    trailing: Button(action: {
+                        showingAddSheet = true
+                    }) {
+                        Image(systemName: "plus")
+                    }
+                )
+                .sheet(isPresented: $showingAddSheet) {
+                    AddChargingView(vehicle: vehicle)
+                        .environmentObject(vehicleManager)
                 }
-            )
-            .sheet(isPresented: $showingAddSheet) {
-                AddChargingView(vehicle: vehicle)
+                .sheet(item: $document) { doc in
+                    ShareSheet(activityItems: [doc.fileURL])
+                }
+                .alert("Export Failed", isPresented: $showErrorAlert) {
+                    Button("OK", role: .cancel) { }
+                }
             }
-            .sheet(item: $document) { doc in
-                ShareSheet(activityItems: [doc.fileURL])
-            }
-            .alert("Export Failed", isPresented: $showErrorAlert) {
-                Button("OK", role: .cancel) { }
-            }
+        } else {
+            Text("No vehicle selected.")
         }
     }
 
-    private func deleteSession(at offsets: IndexSet) {
-        if let index = vehicleManager.vehicles.firstIndex(where: { $0.id == vehicle.id }) {
-            vehicleManager.vehicles[index].chargingSessions.remove(atOffsets: offsets)
-        }
+    private func deleteSession(at offsets: IndexSet, for vehicle: Vehicle) {
+        vehicleManager.deleteChargingSession(for: vehicle, at: offsets)
     }
 
-    private func exportData() {
+    private func exportData(for vehicle: Vehicle) {
         if let csvURL = vehicle.generateCSV() {
             let doc = CSVDocument(fileURL: csvURL)
             self.document = doc
@@ -117,7 +121,12 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct ChargingHistoryView_Previews: PreviewProvider {
     static var previews: some View {
-        ChargingHistoryView(vehicle: Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: ""))
-            .environmentObject(VehicleManager())
+        let vehicleManager = VehicleManager()
+        let sampleVehicle = Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: "")
+        vehicleManager.add(vehicle: sampleVehicle)
+        vehicleManager.currentVehicle = sampleVehicle
+
+        return ChargingHistoryView()
+            .environmentObject(vehicleManager)
     }
 }

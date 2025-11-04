@@ -1,58 +1,68 @@
 import SwiftUI
 
 struct DashboardView: View {
-    let vehicle: Vehicle
+    @EnvironmentObject var vehicleManager: VehicleManager
     @StateObject private var viewModel = DashboardViewModel()
     @State private var showingAddChargingView = false
     @State private var showingSettingsView = false
 
     var body: some View {
-        NavigationView {
-            ZStack(alignment: .bottomTrailing) {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Header
-                        headerView
+        if let vehicle = vehicleManager.currentVehicle {
+            NavigationView {
+                ZStack(alignment: .bottomTrailing) {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            // Header
+                            headerView(for: vehicle)
 
-                        // Section Divider
-                        sectionDivider
+                            // Section Divider
+                            sectionDivider(for: vehicle)
 
-                        // Main Dashboard
-                        mainDashboard
-                            .padding()
+                            // Main Dashboard
+                            mainDashboard
+                                .padding()
 
-                        // Fuel and Service Summary
-                        summarySection
-                            .padding(.horizontal)
+                            // Fuel and Service Summary
+                            summarySection
+                                .padding(.horizontal)
 
-                        // Fuel Efficiency Chart
-                        efficiencyChart
-                            .padding()
+                            // Fuel Efficiency Chart
+                            efficiencyChart
+                                .padding()
+                        }
+                    }
+                    .background(Color(.systemGroupedBackground))
+                    .edgesIgnoringSafeArea(.top)
+
+                    // Floating Action Button
+                    floatingActionButton
+                }
+                .navigationBarHidden(true)
+                .onAppear {
+                    viewModel.update(with: vehicle)
+                }
+                .onChange(of: vehicleManager.currentVehicle?.chargingSessions) { _ in
+                    if let updatedVehicle = vehicleManager.currentVehicle {
+                        viewModel.update(with: updatedVehicle)
                     }
                 }
-                .background(Color(.systemGroupedBackground))
-                .edgesIgnoringSafeArea(.top)
-
-                // Floating Action Button
-                floatingActionButton
+                .sheet(isPresented: $showingAddChargingView) {
+                    if let currentVehicle = vehicleManager.currentVehicle {
+                        AddChargingView(vehicle: currentVehicle)
+                            .environmentObject(vehicleManager)
+                    }
+                }
+                .sheet(isPresented: $showingSettingsView) {
+                    SettingsView()
+                        .environmentObject(vehicleManager)
+                }
             }
-            .navigationBarHidden(true)
-            .onAppear {
-                viewModel.update(with: vehicle)
-            }
-            .onChange(of: vehicle.chargingSessions) { _ in
-                viewModel.update(with: vehicle)
-            }
-            .sheet(isPresented: $showingAddChargingView) {
-                AddChargingView(vehicle: vehicle)
-            }
-            .sheet(isPresented: $showingSettingsView) {
-                SettingsView()
-            }
+        } else {
+            Text("No vehicle selected. Please add or select a vehicle in Settings.")
         }
     }
 
-    private var headerView: some View {
+    private func headerView(for vehicle: Vehicle) -> some View {
         ZStack {
             if let bannerImage = vehicle.bannerImage {
                 bannerImage
@@ -89,7 +99,7 @@ struct DashboardView: View {
         }
     }
 
-    private var sectionDivider: some View {
+    private func sectionDivider(for vehicle: Vehicle) -> some View {
         ZStack {
             Color.charcoalGray
                 .frame(height: 80)
@@ -185,9 +195,12 @@ struct SummaryCard: View {
 
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        // Create a sample vehicle with some data for the preview
-        let vehicle = Vehicle(id: UUID(), name: "My Tesla", make: "Tesla", model: "Model Y", year: 2023, trim: "Long Range", vin: "12345")
-        // You would typically inject a VehicleManager here that has a sample vehicle
-        DashboardView(vehicle: vehicle)
+        let vehicleManager = VehicleManager()
+        let sampleVehicle = Vehicle(id: UUID(), name: "My Tesla", make: "Tesla", model: "Model Y", year: 2023, trim: "Long Range", vin: "12345")
+        vehicleManager.add(vehicle: sampleVehicle)
+        vehicleManager.currentVehicle = sampleVehicle
+
+        return DashboardView()
+            .environmentObject(vehicleManager)
     }
 }

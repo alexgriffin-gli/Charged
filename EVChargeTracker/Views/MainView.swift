@@ -6,12 +6,12 @@ struct MainView: View {
     var body: some View {
         if vehicleManager.currentVehicle != nil {
             TabView {
-                DashboardView(vehicle: vehicleManager.currentVehicle!)
+                DashboardView()
                     .tabItem {
                         Label("Vehicle Info", systemImage: "point.3.connected.trianglepath.dotted")
                     }
 
-                ChargingHistoryView(vehicle: vehicleManager.currentVehicle!)
+                ChargingHistoryView()
                     .tabItem {
                         Label("Vehicle Logs", systemImage: "list.dash")
                     }
@@ -30,7 +30,7 @@ struct MainView_Previews: PreviewProvider {
         let vehicleManager = VehicleManager()
         let sampleVehicle = Vehicle(id: UUID(), name: "Sample EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: "123")
         vehicleManager.add(vehicle: sampleVehicle)
-        vehicleManager.setCurrentVehicle(sampleVehicle)
+        vehicleManager.currentVehicle = sampleVehicle
 
         return MainView()
             .environmentObject(vehicleManager)

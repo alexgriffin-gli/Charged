@@ -39,8 +39,8 @@ struct DetailedSessionView: View {
 
     private func deleteSession() {
         if let vehicle = vehicleManager.currentVehicle,
-           let index = vehicleManager.vehicles.firstIndex(where: { $0.id == vehicle.id }) {
-            vehicleManager.vehicles[index].chargingSessions.removeAll { $0.id == session.id }
+           let sessionIndex = vehicle.chargingSessions.firstIndex(where: { $0.id == session.id }) {
+            vehicleManager.deleteChargingSession(for: vehicle, at: IndexSet(integer: sessionIndex))
         }
     }
 }

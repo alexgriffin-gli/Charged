@@ -42,6 +42,12 @@ class VehicleManager: ObservableObject {
         }
     }
 
+    func deleteChargingSession(for vehicle: Vehicle, at offsets: IndexSet) {
+        if let index = vehicles.firstIndex(where: { $0.id == vehicle.id }) {
+            vehicles[index].chargingSessions.remove(atOffsets: offsets)
+        }
+    }
+
     private func save() {
         if let encoded = try? JSONEncoder().encode(vehicles) {
             UserDefaults.standard.set(encoded, forKey: vehiclesSaveKey)
