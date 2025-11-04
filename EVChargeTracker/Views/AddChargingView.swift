@@ -63,7 +63,7 @@ struct AddChargingView: View {
                 }
 
                 Section(header: Text("Driving Style")) {
-                    VStaxk {
+                    VStack {
                         Text("City Driving: \(Int(cityDrivingPercentage))%")
                         Slider(value: $cityDrivingPercentage, in: 0...100, step: 1)
                     }

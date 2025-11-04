@@ -8,30 +8,31 @@ struct MainView: View {
             TabView {
                 DashboardView(vehicle: vehicleManager.currentVehicle!)
                     .tabItem {
-                        Label("Dashboard", systemImage: "chart.bar.xaxis")
+                        Label("Vehicle Info", systemImage: "point.3.connected.trianglepath.dotted")
                     }
 
                 ChargingHistoryView(vehicle: vehicleManager.currentVehicle!)
                     .tabItem {
-                        Label("History", systemImage: "list.bullet")
-                    }
-
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemImage: "gear")
+                        Label("Vehicle Logs", systemImage: "list.dash")
                     }
             }
-            .accentColor(.forestGreen)
+            .accentColor(.deepForestGreen)
         } else {
             AddVehicleView()
-                .accentColor(.forestGreen)
+                .accentColor(.deepForestGreen)
         }
     }
 }
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView()
-            .environmentObject(VehicleManager())
+        // Setup a sample vehicle for the preview
+        let vehicleManager = VehicleManager()
+        let sampleVehicle = Vehicle(id: UUID(), name: "Sample EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: "123")
+        vehicleManager.add(vehicle: sampleVehicle)
+        vehicleManager.setCurrentVehicle(sampleVehicle)
+
+        return MainView()
+            .environmentObject(vehicleManager)
     }
 }

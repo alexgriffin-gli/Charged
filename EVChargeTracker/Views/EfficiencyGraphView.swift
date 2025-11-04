@@ -5,27 +5,38 @@ struct EfficiencyGraphView: View {
     let efficiencyData: [(x: String, y: Double)]
 
     var body: some View {
-        VStack {
-            Text("Efficiency Over Time")
-                .font(.headline)
+        Chart {
+            ForEach(efficiencyData, id: \.x) { dataPoint in
+                LineMark(
+                    x: .value("Date", dataPoint.x),
+                    y: .value("mi/kWh", dataPoint.y)
+                )
+                .foregroundStyle(Color.teal)
 
-            Chart {
-                ForEach(efficiencyData, id: \.x) { dataPoint in
-                    LineMark(
-                        x: .value("Date", dataPoint.x),
-                        y: .value("Efficiency (mi/kWh)", dataPoint.y)
-                    )
-                    .symbol(Circle().strokeBorder(lineWidth: 2))
-                }
+                PointMark(
+                    x: .value("Date", dataPoint.x),
+                    y: .value("mi/kWh", dataPoint.y)
+                )
+                .foregroundStyle(Color.teal)
             }
-            .frame(height: 200)
-            .padding()
         }
+        .chartYAxis {
+            AxisMarks(position: .trailing)
+        }
+        .chartXAxis(.hidden)
+        .frame(height: 150)
     }
 }
 
 struct EfficiencyGraphView_Previews: PreviewProvider {
     static var previews: some View {
-        EfficiencyGraphView(efficiencyData: [("Jan 1", 3.5), ("Jan 2", 3.8)])
+        EfficiencyGraphView(efficiencyData: [
+            (x: "1/1", y: 3.5),
+            (x: "1/8", y: 3.8),
+            (x: "1/15", y: 3.6),
+            (x: "1/22", y: 4.1),
+            (x: "1/29", y: 3.9)
+        ])
+        .padding()
     }
 }
