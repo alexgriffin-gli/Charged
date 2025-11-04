@@ -1,7 +1,9 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ChargingHistoryView: View {
-    @EnvironmentObject var chargeManager: ChargeManager
+    @EnvironmentObject var vehicleManager: VehicleManager
+    let vehicle: Vehicle
     @State private var showingAddSheet = false
     @State private var document: CSVDocument?
     @State private var showErrorAlert = false
@@ -9,7 +11,7 @@ struct ChargingHistoryView: View {
     var body: some View {
         NavigationView {
             List {
-                ForEach(chargeManager.sessions) { session in
+                ForEach(vehicle.chargingSessions) { session in
                     NavigationLink(destination: DetailedSessionView(session: session)) {
                         VStack(alignment: .leading) {
                             Text("Date: \(session.date, formatter: itemFormatter)")
@@ -40,7 +42,7 @@ struct ChargingHistoryView: View {
                 }
             )
             .sheet(isPresented: $showingAddSheet) {
-                AddChargingView()
+                AddChargingView(vehicle: vehicle)
             }
             .sheet(item: $document) { doc in
                 ShareSheet(activityItems: [doc.fileURL])
@@ -52,14 +54,13 @@ struct ChargingHistoryView: View {
     }
 
     private func deleteSession(at offsets: IndexSet) {
-        for index in offsets {
-            let session = chargeManager.sessions[index]
-            chargeManager.delete(session: session)
+        if let index = vehicleManager.vehicles.firstIndex(where: { $0.id == vehicle.id }) {
+            vehicleManager.vehicles[index].chargingSessions.remove(atOffsets: offsets)
         }
     }
 
     private func exportData() {
-        if let csvURL = chargeManager.generateCSV() {
+        if let csvURL = vehicle.generateCSV() {
             let doc = CSVDocument(fileURL: csvURL)
             self.document = doc
         } else {
@@ -74,9 +75,6 @@ private let itemFormatter: DateFormatter = {
     formatter.timeStyle = .short
     return formatter
 }()
-
-// Helper for sharing the CSV file
-import UniformTypeIdentifiers
 
 struct CSVDocument: FileDocument, Identifiable {
     static var readableContentTypes: [UTType] { [.commaSeparatedText] }
@@ -105,7 +103,6 @@ struct CSVDocument: FileDocument, Identifiable {
     }
 }
 
-
 struct ShareSheet: UIViewControllerRepresentable {
     var activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
@@ -118,10 +115,9 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: UIViewControllerRepresentableContext<ShareSheet>) {}
 }
 
-
 struct ChargingHistoryView_Previews: PreviewProvider {
     static var previews: some View {
-        ChargingHistoryView()
-            .environmentObject(ChargeManager())
+        ChargingHistoryView(vehicle: Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: ""))
+            .environmentObject(VehicleManager())
     }
 }

@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct AddChargingView: View {
-    @EnvironmentObject var chargeManager: ChargeManager
+    @EnvironmentObject var vehicleManager: VehicleManager
     @Environment(\.presentationMode) var presentationMode
+    let vehicle: Vehicle
 
     @State private var date = Date()
     @State private var odometer = ""
@@ -21,7 +22,7 @@ struct AddChargingView: View {
     @State private var alertMessage = ""
 
     var lastOdometer: Double {
-        chargeManager.sessions.first?.odometer ?? 0
+        vehicle.chargingSessions.first?.odometer ?? 0
     }
 
     var isFormValid: Bool {
@@ -42,7 +43,7 @@ struct AddChargingView: View {
         NavigationView {
             Form {
                 Section(header: Text("Vehicle")) {
-                    Text("My EV")
+                    Text(vehicle.name)
                     Text("Last Odometer: \(String(format: "%.1f", lastOdometer))")
                 }
 
@@ -131,14 +132,14 @@ struct AddChargingView: View {
             chargingNetwork: chargingNetwork,
             tags: tags.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         )
-        chargeManager.add(session: newSession)
+        vehicleManager.add(session: newSession, to: vehicle)
         presentationMode.wrappedValue.dismiss()
     }
 }
 
 struct AddChargingView_Previews: PreviewProvider {
     static var previews: some View {
-        AddChargingView()
-            .environmentObject(ChargeManager())
+        AddChargingView(vehicle: Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023))
+            .environmentObject(VehicleManager())
     }
 }

@@ -1,27 +1,30 @@
 import SwiftUI
 
 struct MainView: View {
-    @StateObject private var chargeManager = ChargeManager()
+    @EnvironmentObject var vehicleManager: VehicleManager
 
     var body: some View {
-        TabView {
-            DashboardView()
-                .tabItem {
-                    Label("Dashboard", systemImage: "chart.bar.xaxis")
-                }
-                .environmentObject(chargeManager)
+        if vehicleManager.currentVehicle != nil {
+            TabView {
+                DashboardView(vehicle: vehicleManager.currentVehicle!)
+                    .tabItem {
+                        Label("Dashboard", systemImage: "chart.bar.xaxis")
+                    }
 
-            ChargingHistoryView()
-                .tabItem {
-                    Label("History", systemImage: "list.bullet")
-                }
-                .environmentObject(chargeManager)
+                ChargingHistoryView(vehicle: vehicleManager.currentVehicle!)
+                    .tabItem {
+                        Label("History", systemImage: "list.bullet")
+                    }
 
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
-                .environmentObject(chargeManager)
+                SettingsView()
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+            }
+            .accentColor(.forestGreen)
+        } else {
+            AddVehicleView()
+                .accentColor(.forestGreen)
         }
     }
 }
@@ -29,5 +32,6 @@ struct MainView: View {
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         MainView()
+            .environmentObject(VehicleManager())
     }
 }

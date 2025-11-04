@@ -2,11 +2,13 @@ import SwiftUI
 
 @main
 struct EVChargeTrackerApp: App {
+    @StateObject private var vehicleManager = VehicleManager()
     @AppStorage("theme") private var selectedTheme: Theme = .system
 
     var body: some Scene {
         WindowGroup {
             MainView()
+                .environmentObject(vehicleManager)
                 .preferredColorScheme(colorScheme)
         }
     }

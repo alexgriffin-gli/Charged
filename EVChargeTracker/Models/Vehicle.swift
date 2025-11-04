@@ -1,40 +1,19 @@
 import Foundation
-import Combine
+import SwiftUI
 
-class ChargeManager: ObservableObject {
-    @Published var sessions: [ChargingSession] = [] {
-        didSet {
-            save()
-        }
-    }
-
-    private let saveKey = "ChargingSessions"
-
-    init() {
-        load()
-    }
-
-    func add(session: ChargingSession) {
-        sessions.append(session)
-        sessions.sort { $0.odometer > $1.odometer }
-    }
-
-    func delete(session: ChargingSession) {
-        sessions.removeAll { $0.id == session.id }
-    }
-
-    // MARK: - Statistics
-
-    var totalEnergy: Double {
-        sessions.map(\.energyAdded).reduce(0, +)
-    }
-
-    var totalCost: Double {
-        sessions.map(\.totalCost).reduce(0, +)
-    }
+struct Vehicle: Identifiable, Codable, Equatable {
+    let id: UUID
+    var name: String
+    var make: String
+    var model: String
+    var year: Int
+    var trim: String
+    var vin: String
+    var bannerImageData: Data?
+    var chargingSessions: [ChargingSession] = []
 
     var averageEfficiency: Double {
-        let fullCharges = sessions.filter { !$0.isPartialCharge && !$0.isMissedCharge }
+        let fullCharges = chargingSessions.filter { !$0.isPartialCharge && !$0.isMissedCharge }
         guard fullCharges.count > 1 else { return 0.0 }
 
         let sortedCharges = fullCharges.sorted { $0.odometer < $1.odometer }
@@ -48,13 +27,20 @@ class ChargeManager: ObservableObject {
             totalEnergy += sortedCharges[i].energyAdded
         }
 
-        return totalEnergy > 0 ? (totalEnergy / totalDistance) * 100 : 0.0
+        return totalEnergy > 0 ? totalDistance / totalEnergy : 0.0
     }
 
-    // MARK: - Data Export
+    #if canImport(UIKit)
+    var bannerImage: Image? {
+        if let data = bannerImageData, let uiImage = UIImage(data: data) {
+            return Image(uiImage: uiImage)
+        }
+        return nil
+    }
+    #endif
 
     func generateCSV() -> URL? {
-        let fileName = "charging_sessions.csv"
+        let fileName = "\(name.replacingOccurrences(of: " ", with: "_"))_charging_sessions.csv"
         let path = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
 
         var csvText = "Date,Odometer,Energy Added (kWh),Total Cost,Partial Charge,Missed Charge,City Driving %,Charger Type,Location,Payment Method,Charging Network,Tags\n"
@@ -62,7 +48,7 @@ class ChargeManager: ObservableObject {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
 
-        for session in sessions {
+        for session in chargingSessions {
             let date = dateFormatter.string(from: session.date)
             let location = "\"\(session.location)\""
             let chargerType = "\"\(session.chargerType)\""
@@ -81,21 +67,5 @@ class ChargeManager: ObservableObject {
             print("Failed to create file: \(error)")
             return nil
         }
-    }
-
-    private func save() {
-        if let encoded = try? JSONEncoder().encode(sessions) {
-            UserDefaults.standard.set(encoded, forKey: saveKey)
-        }
-    }
-
-    private func load() {
-        if let data = UserDefaults.standard.data(forKey: saveKey) {
-            if let decoded = try? JSONDecoder().decode([ChargingSession].self, from: data) {
-                self.sessions = decoded
-                return
-            }
-        }
-        self.sessions = []
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DetailedSessionView: View {
-    @EnvironmentObject var chargeManager: ChargeManager
+    @EnvironmentObject var vehicleManager: VehicleManager
     @Environment(\.presentationMode) var presentationMode
     let session: ChargingSession
 
@@ -29,12 +29,19 @@ struct DetailedSessionView: View {
 
             Section {
                 Button("Delete", role: .destructive) {
-                    chargeManager.delete(session: session)
+                    deleteSession()
                     presentationMode.wrappedValue.dismiss()
                 }
             }
         }
         .navigationTitle("Session Details")
+    }
+
+    private func deleteSession() {
+        if let vehicle = vehicleManager.currentVehicle,
+           let index = vehicleManager.vehicles.firstIndex(where: { $0.id == vehicle.id }) {
+            vehicleManager.vehicles[index].chargingSessions.removeAll { $0.id == session.id }
+        }
     }
 }
 
@@ -48,6 +55,6 @@ private let itemFormatter: DateFormatter = {
 struct DetailedSessionView_Previews: PreviewProvider {
     static var previews: some View {
         DetailedSessionView(session: ChargingSession(id: UUID(), date: Date(), odometer: 70000, energyAdded: 45.0, totalCost: 15.75, isPartialCharge: false, isMissedCharge: false, cityDrivingPercentage: 50, chargerType: "DC Fast", location: "ChargePoint Station", paymentMethod: "Credit Card", chargingNetwork: "ChargePoint", tags: ["Road Trip"]))
-            .environmentObject(ChargeManager())
+            .environmentObject(VehicleManager())
     }
 }
