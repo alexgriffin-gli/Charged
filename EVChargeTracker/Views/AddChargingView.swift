@@ -63,7 +63,7 @@ struct AddChargingView: View {
                 }
 
                 Section(header: Text("Driving Style")) {
-                    VStack {
+                    VStaxk {
                         Text("City Driving: \(Int(cityDrivingPercentage))%")
                         Slider(value: $cityDrivingPercentage, in: 0...100, step: 1)
                     }
@@ -139,7 +139,7 @@ struct AddChargingView: View {
 
 struct AddChargingView_Previews: PreviewProvider {
     static var previews: some View {
-        AddChargingView(vehicle: Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023))
+        AddChargingView(vehicle: Vehicle(id: UUID(), name: "My EV", make: "Tesla", model: "Model 3", year: 2023, trim: "Long Range", vin: ""))
             .environmentObject(VehicleManager())
     }
 }
