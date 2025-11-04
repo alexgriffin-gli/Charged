@@ -1,4 +1,4 @@
-import SwiftUI
+internal import SwiftUI
 
 struct MetricCard: View {
     var title: String

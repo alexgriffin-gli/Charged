@@ -1,4 +1,4 @@
-import SwiftUI
+internal import SwiftUI
 
 struct EfficiencyGraphView: View {
     var data: [(x: String, y: Double)]

@@ -1,15 +1,17 @@
-import SwiftUI
+internal import SwiftUI
 
 struct CheckboxToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack {
-            Button {
-                configuration.isOn.toggle()
-            } label: {
-                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                    .font(.title2)
-            }
             configuration.label
+            Spacer()
+            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
+                .resizable()
+                .frame(width: 24, height: 24)
+                .foregroundColor(configuration.isOn ? .deepForestGreen : .secondary)
+                .onTapGesture {
+                    configuration.isOn.toggle()
+                }
         }
     }
 }

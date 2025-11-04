@@ -1,4 +1,4 @@
-import SwiftUI
+internal import SwiftUI
 
 struct EfficiencyBarGraphView: View {
     var efficiencies: [Double]

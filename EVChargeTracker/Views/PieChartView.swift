@@ -1,4 +1,4 @@
-import SwiftUI
+internal import SwiftUI
 
 struct PieChartView: View {
     var cityPercentage: Double

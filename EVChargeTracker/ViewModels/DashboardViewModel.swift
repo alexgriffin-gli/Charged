@@ -1,5 +1,5 @@
 import Foundation
-import SwiftUI
+internal import SwiftUI
 import Combine
 
 @MainActor
@@ -16,7 +16,8 @@ class DashboardViewModel: ObservableObject {
     @Published var efficiencyData: [(x: String, y: Double)] = []
 
     func update(with vehicle: Vehicle) {
-        let sessions = vehicle.chargingSessions.sorted { $0.odometer < $1.odometer }
+        // Sort sessions by date first
+        let sessions = vehicle.chargingSessions.sorted { $0.date < $1.date }
 
         // Reset all values before recalculating
         resetValues()
@@ -27,7 +28,8 @@ class DashboardViewModel: ObservableObject {
         totalCost = sessions.reduce(0) { $0 + $1.totalCost }
         totalEnergy = sessions.reduce(0) { $0 + $1.energyAdded }
 
-        if let firstOdometer = sessions.first?.odometer, let lastOdometer = sessions.last?.odometer {
+        if let firstOdometer = sessions.min(by: { $0.odometer < $1.odometer })?.odometer,
+           let lastOdometer = sessions.max(by: { $0.odometer < $1.odometer })?.odometer {
             totalMilesTracked = lastOdometer - firstOdometer
         }
 
@@ -44,14 +46,15 @@ class DashboardViewModel: ObservableObject {
     }
 
     private func calculateEfficiencies(from sessions: [ChargingSession]) -> [(x: String, y: Double)] {
-        var results: [(x: String, y: Double)] = []
-        guard sessions.count > 1 else { return results }
+        guard sessions.count > 1 else { return [] }
 
+        var dailyEfficiencies: [Date: [Double]] = [:]
+
+        // Calculate individual efficiencies
         for i in 1..<sessions.count {
             let currentSession = sessions[i]
             let previousSession = sessions[i-1]
 
-            // Skip calculations if the previous charge was partial or missed
             if previousSession.isPartialCharge || previousSession.isMissedCharge {
                 continue
             }
@@ -61,11 +64,19 @@ class DashboardViewModel: ObservableObject {
 
             if distance > 0 && energy > 0 {
                 let efficiency = distance / energy
-                let dateString = currentSession.date.formatted(date: .numeric, time: .omitted)
-                results.append((x: dateString, y: efficiency))
+                let day = Calendar.current.startOfDay(for: currentSession.date)
+                dailyEfficiencies[day, default: []].append(efficiency)
             }
         }
-        return results
+
+        // Average efficiencies for each day and format for the graph
+        let sortedDailyEfficiencies = dailyEfficiencies.sorted { $0.key < $1.key }
+
+        return sortedDailyEfficiencies.map { (date, efficiencies) in
+            let averageEfficiency = efficiencies.reduce(0, +) / Double(efficiencies.count)
+            let dateString = date.formatted(date: .numeric, time: .omitted)
+            return (x: dateString, y: averageEfficiency)
+        }
     }
 
     private func calculateDrivingPercentages(from sessions: [ChargingSession]) {
