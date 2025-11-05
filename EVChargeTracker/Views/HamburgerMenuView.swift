@@ -1,4 +1,4 @@
-internal import SwiftUI
+import SwiftUI
 
 struct HamburgerMenuView: View {
     @ObservedObject var vehicleManager: VehicleManager
@@ -7,61 +7,47 @@ struct HamburgerMenuView: View {
     @Binding var isMenuOpen: Bool
 
     var body: some View {
-        GeometryReader { geometry in
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("My Vehicles")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .padding(.top, (geometry.size.height * 0.2)) // 20% from the top
-                        .padding(.leading)
+        VStack(alignment: .leading) {
+            Text("Vehicles")
+                .font(.headline)
+                .padding(.top, 100)
+                .padding(.leading, 20)
 
-                    List {
-                        ForEach(vehicleManager.vehicles) { vehicle in
-                            Button(action: {
-                                self.selectedVehicle = vehicle
-                                withAnimation {
-                                    self.isMenuOpen = false
-                                }
-                            }) {
-                                Text(vehicle.name)
-                                    .fontWeight(vehicle.id == selectedVehicle?.id ? .bold : .regular)
-                                    .padding(vehicle.id == selectedVehicle?.id ? 10 : 0)
-                                    .background(vehicle.id == selectedVehicle?.id ? Color.deepForestGreen : Color.clear)
-                                    .foregroundColor(vehicle.id == selectedVehicle?.id ? .white : .primary)
-                                    .cornerRadius(10)
-                            }
-                        }
-                    }
-                    .listStyle(PlainListStyle())
-
-                    NavigationLink(destination: HistoryView(vehicleManager: vehicleManager, selectedVehicle: $selectedVehicle)) {
-                        Text("History")
-                    }
-                    .padding(.leading)
-
-                    Spacer()
-
-                    Button(action: {
-                        showingAddVehicle = true
+            ForEach(vehicleManager.vehicles) { vehicle in
+                Button(action: {
+                    selectedVehicle = vehicle
+                    withAnimation {
                         isMenuOpen = false
-                    }) {
-                        Text("Add Vehicle")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.deepForestGreen)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, (geometry.size.height * 0.2)) // 20% from the bottom
+                }) {
+                    Text(vehicle.name)
+                        .foregroundColor(selectedVehicle == vehicle ? .white : .gray)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(selectedVehicle == vehicle ? Color.blue.opacity(0.5) : Color.clear)
+                        .cornerRadius(8)
                 }
-                .frame(width: geometry.size.width * 0.4) // 40% of the screen width
-                .background(Color(UIColor.systemBackground))
-                .edgesIgnoringSafeArea(.all)
-
-                Spacer() // This will push the menu to the left
             }
+
+            Button(action: {
+                showingAddVehicle = true
+                withAnimation {
+                    isMenuOpen = false
+                }
+            }) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add Vehicle")
+                }
+                .foregroundColor(.white)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 20)
+            }
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(UIColor.systemGray6))
+        .edgesIgnoringSafeArea(.all)
     }
 }
