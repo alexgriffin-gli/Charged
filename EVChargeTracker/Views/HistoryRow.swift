@@ -4,30 +4,30 @@ struct HistoryRow: View {
     let session: ChargingSession
 
     var body: some View {
-        GeometryReader { geometry in
-            HStack {
-                Image(systemName: icon(for: session.chargerType))
-                    .foregroundColor(.deepForestGreen)
-                    .frame(width: geometry.size.width * 0.1)
+        HStack {
+            Image(systemName: icon(for: session.chargerType))
+                .foregroundColor(.deepForestGreen)
+                .frame(width: 30) // Fixed width for the icon container
 
-                VStack(alignment: .leading) {
-                    Text(session.date, style: .date)
-                        .font(.headline)
-                    Text(String(format: "%.2f kWh for $%.2f", session.energyAdded, session.totalCost))
-                    Text(session.location.rawValue)
-                }
-                .frame(width: geometry.size.width * 0.6)
-
-                Spacer()
-
-                Text(String(format: "%.2f", session.costPerKwh))
-                    .padding(10)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(10)
-                    .frame(width: geometry.size.width * 0.2)
+            VStack(alignment: .leading) {
+                Text(session.date, style: .date)
+                    .font(.headline)
+                Text(String(format: "%.2f kWh for $%.2f", session.energyAdded, session.totalCost))
+                    .font(.subheadline)
+                Text(session.location.rawValue)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
-            .padding(.vertical, 8)
+
+            Spacer()
+
+            Text(String(format: "$%.2f/kWh", session.costPerKwh))
+                .font(.caption.bold())
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
         }
+        .padding(.vertical, 8)
     }
 
     private func icon(for chargerType: ChargerType) -> String {

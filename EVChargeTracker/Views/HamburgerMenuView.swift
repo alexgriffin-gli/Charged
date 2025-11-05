@@ -24,7 +24,7 @@ struct HamburgerMenuView: View {
                         .foregroundColor(selectedVehicle == vehicle ? .white : .gray)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 20)
-                        .background(selectedVehicle == vehicle ? Color.blue.opacity(0.5) : Color.clear)
+                        .background(selectedVehicle == vehicle ? Color.deepForestGreen.opacity(0.5) : Color.clear)
                         .cornerRadius(8)
                 }
             }
