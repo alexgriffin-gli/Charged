@@ -12,12 +12,17 @@ struct HistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Custom Header
-            HStack {
-                VStack {
-                    MetricCard(title: "Best Efficiency", value: String(format: "%.2f mi/kWh", viewModel.bestEfficiency))
-                    MetricCard(title: "Last Efficiency", value: String(format: "%.2f mi/kWh", viewModel.lastEfficiency))
+            VStack {
+                Text("Recent Efficiency")
+                    .font(.headline)
+                    .padding(.top)
+                HStack {
+                    VStack {
+                        MetricCard(title: "Best Efficiency", value: String(format: "%.2f mi/kWh", viewModel.bestEfficiency))
+                        MetricCard(title: "Last Efficiency", value: String(format: "%.2f mi/kWh", viewModel.lastEfficiency))
+                    }
+                    EfficiencyBarGraphView(efficiencies: viewModel.efficiencyData.map { $0.y })
                 }
-                EfficiencyBarGraphView(efficiencies: viewModel.efficiencyData.map { $0.y })
             }
             .frame(height: 200)
             .background(Color.white)

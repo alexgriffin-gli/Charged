@@ -1,4 +1,4 @@
-import SwiftUI
+internal import SwiftUI
 
 struct HamburgerMenuView: View {
     @ObservedObject var vehicleManager: VehicleManager

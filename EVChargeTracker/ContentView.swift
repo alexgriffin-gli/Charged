@@ -1,4 +1,4 @@
-import SwiftUI
+internal import SwiftUI
 
 struct ContentView: View {
     @StateObject private var vehicleManager = VehicleManager()
