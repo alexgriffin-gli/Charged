@@ -1,18 +1,18 @@
 import Foundation
 
-enum ChargerType: String, Codable, CaseIterable {
+enum ChargerType: String, Codable, CaseIterable, Hashable {
     case level1 = "Level 1"
     case level2 = "Level 2"
     case level3 = "Level 3"
 }
 
-enum LocationType: String, Codable, CaseIterable {
+enum LocationType: String, Codable, CaseIterable, Hashable {
     case home = "Home"
     case work = "Work"
     case custom = "Custom"
 }
 
-struct ChargingSession: Identifiable, Codable, Equatable {
+struct ChargingSession: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     var date: Date
     var odometer: Double
