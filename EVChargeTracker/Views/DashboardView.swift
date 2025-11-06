@@ -94,7 +94,7 @@ private extension DashboardView {
     }
 
     var drivingMixChart: some View {
-        PieChartView(cityPercentage: viewModel.cityDrivingPercentage, highwayPercentage: viewModel.highwayPercentage)
+        PieChartView(cityPercentage: viewModel.cityDrivingPercentage, highwayPercentage: viewModel.highwayDrivingPercentage)
             .frame(height: 150)
             .padding()
     }
